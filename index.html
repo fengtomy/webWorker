@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web Worker</title>
+</head>
+<body>
+  <div>
+    <input id="fibonacciIndex" />
+    <button id="calculateButton">begin to calculate fibonacci</button>
+    <button id="cancelCalculateButton">cancel</button>
+    <div>
+      <span>result is:</span>
+      <span id="result"></span>
+    </div>
+  </div>
+  <script>
+    const input = document.getElementById("fibonacciIndex");
+    const calculateButton = document.getElementById("calculateButton");
+    const cancelCalculateButton = document.getElementById("cancelCalculateButton");
+    const resultSpan = document.getElementById("result");
+    const statusMap = {
+      CALCULATING: "CALCULATING",
+      COMPLETED: "COMPLETED"
+    };
+    let worker;
+    let status;
+    calculateButton.addEventListener("click", function() {
+      const fibonacciIndex = input.value || 1;
+      worker = new Worker("./doFibonacci.js");
+      changeStatus(statusMap.CALCULATING);
+      worker.postMessage({
+        number: fibonacciIndex
+      });
+      worker.onmessage = function(event) {
+        resultSpan.innerText = event.data.value;
+        changeStatus(statusMap.COMPLETED);
+      };
+      worker.onerror = function(error) {
+        resultSpan.innerText = error.message;
+        changeStatus(statusMap.COMPLETED)
+      };
+    });
+    cancelCalculateButton.addEventListener("click", function() {
+      if (worker && status === statusMap.CALCULATING) {
+        terminateWorker();
+      }
+    });
+    
+    function changeStatus(statusStr) {
+      status = statusStr;
+    }
+    function terminateWorker(worker) {
+      worker.terminate();
+      worker = null;
+      resultSpan.innerText = "calculation canceled";
+    }
+  </script>
+</body>
+</html>
